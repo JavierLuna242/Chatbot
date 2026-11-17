@@ -1,0 +1,14 @@
+# Alternativa con Docker para el servidor MCP en la VM de Azure (la instalación normal es instalacion-debian/instalar_debian.sh).
+# Solo corre el MCP: la base de datos es Supabase y los flujos viven en n8n Cloud. El MCP queda en 127.0.0.1:9000 y se
+# publica con el túnel de Cloudflare (mcp.javier.life -> http://localhost:9000); no abras el puerto 9000 en el NSG de Azure.
+# Uso:  docker compose up -d --build   (lee DATABASE_URL, MCP_TOKEN y CALENDARIO_CSV_URL del .env de esta carpeta)
+services:
+  mcp:
+    build: ./servidor-mcp
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?define DATABASE_URL en .env (Session pooler de Supabase)}
+      MCP_TOKEN: ${MCP_TOKEN:?define MCP_TOKEN en .env (mínimo 32 caracteres)}
+      CALENDARIO_CSV_URL: ${CALENDARIO_CSV_URL:-}
+    ports:
+      - "127.0.0.1:9000:9000"
