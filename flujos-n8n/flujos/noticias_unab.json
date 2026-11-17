@@ -1,0 +1,113 @@
+{
+  "id": "unabNoticias0001",
+  "name": "Noticias UNAB (scraping periódico)",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "nodes": [
+    {
+      "id": "2c1d6c1e-0001-4c55-9a11-000000000001",
+      "name": "Cada 6 horas",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "2c1d6c1e-0004-4c55-9a11-000000000004",
+      "name": "Ejecutar ahora",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        500
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "2c1d6c1e-0002-4c55-9a11-000000000002",
+      "name": "Leer noticias unab.edu.co",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "url": "https://unab.edu.co/wp-json/wp/v2/posts?per_page=20&_fields=date,link,title,excerpt",
+        "options": {}
+      }
+    },
+    {
+      "id": "2c1d6c1e-0003-4c55-9a11-000000000003",
+      "name": "Guardar en tabla noticia",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO noticia (url, titulo, resumen, fecha) VALUES ($1, $2, $3, $4) ON CONFLICT (url) DO UPDATE SET titulo = EXCLUDED.titulo, resumen = EXCLUDED.resumen",
+        "options": {
+          "queryReplacement": "={{ [$json.link, $json.title.rendered.replace(/<[^>]+>/g, ''), $json.excerpt.rendered.replace(/<[^>]+>/g, '').trim(), $json.date + '-05:00'] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "pgSupabase0000001",
+          "name": "Supabase Postgres"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cada 6 horas": {
+      "main": [
+        [
+          {
+            "node": "Leer noticias unab.edu.co",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ejecutar ahora": {
+      "main": [
+        [
+          {
+            "node": "Leer noticias unab.edu.co",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer noticias unab.edu.co": {
+      "main": [
+        [
+          {
+            "node": "Guardar en tabla noticia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
