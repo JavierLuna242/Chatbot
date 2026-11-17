@@ -1,0 +1,31 @@
+evento,fecha_inicio,fecha_fin,categoria
+Inicio de clases 2026-2,2026-08-03,,academico
+Adición y retiro de materias sin costo 2026-2,2026-08-03,2026-08-14,matricula
+Fecha límite para pedir aplazamiento del semestre 2026-2,2026-08-21,,matricula
+Primer corte de notas 2026-2 (30 %),2026-09-07,2026-09-11,evaluaciones
+Fecha límite para cancelar materias 2026-2 (octava semana),2026-09-25,,matricula
+Festivo (Día de la Raza),2026-10-12,,festivo
+Segundo corte de notas 2026-2 (30 %),2026-10-12,2026-10-16,evaluaciones
+Festivo (Todos los Santos),2026-11-02,,festivo
+Festivo (Independencia de Cartagena),2026-11-16,,festivo
+Convocatoria de intercambio y movilidad 2027-1,2026-11-23,2026-12-18,bienestar
+Exámenes finales 2026-2 (40 %),2026-11-23,2026-12-04,evaluaciones
+Solicitud de reintegro para 2027-1,2026-11-30,2026-12-18,matricula
+Convocatoria de beca por excelencia académica 2027-1,2026-12-01,2026-12-15,bienestar
+Inscripción de materias 2027-1 (incluye cursos CD de la insignia),2026-12-07,2026-12-18,matricula
+Festivo (Inmaculada Concepción),2026-12-08,,festivo
+Cierre de notas 2026-2,2026-12-11,,academico
+Ceremonia de grado de diciembre,2026-12-12,,grados
+Liquidación y pago de matrícula 2027-1,2026-12-14,2027-01-22,matricula
+Vacaciones de fin de año,2026-12-19,2027-01-17,academico
+Festivo (Navidad),2026-12-25,,festivo
+Inicio de clases 2027-1,2027-01-25,,academico
+Adición y retiro de materias sin costo 2027-1,2027-01-25,2027-02-05,matricula
+Fecha límite para pedir aplazamiento del semestre 2027-1,2027-02-12,,matricula
+Primer corte de notas 2027-1 (30 %),2027-03-08,2027-03-12,evaluaciones
+Fecha límite para cancelar materias 2027-1 (octava semana),2027-03-19,,matricula
+Segundo corte de notas 2027-1 (30 %),2027-04-12,2027-04-16,evaluaciones
+Solicitud de grado para la ceremonia de junio,2027-04-19,2027-05-07,grados
+Exámenes finales 2027-1 (40 %),2027-05-24,2027-06-04,evaluaciones
+Cierre de notas 2027-1,2027-06-11,,academico
+Ceremonia de grado de junio,2027-06-18,,grados
