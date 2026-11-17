@@ -1,0 +1,8 @@
+{
+  "name": "pruebas-asistente-academico",
+  "private": true,
+  "description": "Herramientas de prueba en JavaScript: capturas de pantalla del chat para el README",
+  "devDependencies": {
+    "playwright-core": "^1.49.0"
+  }
+}
