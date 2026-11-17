@@ -50,7 +50,7 @@ async function abrir(nav, opciones) {
     const nav = await chromium.launch({ executablePath: NAVEGADOR, headless: true });
 
     // ---- escritorio
-    let [ctx, p] = await abrir(nav, { viewport: { width: 1280, height: 860 } });
+    let [ctx, p] = await abrir(nav, { viewport: { width: 1100, height: 720 } });
     await foto(p, '01-bienvenida');
     await p.locator('.bienvenida button', { hasText: 'U00100005' }).click();
     console.log('   ->', (await esperarRespuesta(p, '02-identificacion')).replace(/\s+/g, ' ').slice(0, 130));
