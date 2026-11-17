@@ -1,0 +1,20 @@
+# secretos y datos locales: nunca a git
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# generado
+*.log
+__pycache__/
+
+# Laravel (sitio-web): dependencias, caché, sesiones, logs y pruebas
+sitio-web/vendor/
+sitio-web/storage/
+sitio-web/bootstrap/cache/
+sitio-web/.phpunit.cache/
+sitio-web/.phpunit.result.cache
+
+# herramientas de prueba (JavaScript)
+pruebas/node_modules/

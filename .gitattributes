@@ -1,0 +1,7 @@
+# Finales de línea: todo en LF dentro del repositorio (los scripts de Linux fallan con CRLF)
+* text=auto eol=lf
+
+# Archivos binarios: git no debe tocarlos
+*.png binary
+*.ico binary
+*.zip binary
