@@ -22,11 +22,9 @@ Recorrido de 2:39 minutos, con subtítulos, por el proyecto funcionando en produ
 estudiantil, varias consultas reales (avance, calculadora de notas, calendario, requisitos de grado con cita del documento), cómo funciona por dentro
 y sus límites.
 
-<p align="center">
-  <a href="docs/asistente_academico.mp4"><img src="docs/capturas/video-portada.png" alt="Ver el video del Asistente Académico (2:39)" width="820"></a><br>
-  <em>Haz clic en la imagen para abrir el video (<code>docs/asistente_academico.mp4</code>, 4,8 MB). Si GitHub no lo reproduce en la página,
-  usa <strong>View raw</strong> o descárgalo.</em>
-</p>
+https://github.com/user-attachments/assets/8e3f08bf-710f-4e26-97b8-7989c9840998
+
+Copia del video en el repositorio: [`docs/asistente_academico.mp4`](docs/asistente_academico.mp4) (4,8 MB).
 
 | Minuto (aprox.) | Contenido |
 |---|---|
