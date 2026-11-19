@@ -50,7 +50,7 @@
                 </div>
                 <form id="formulario" data-url="{{ route('chat.enviar') }}" data-sesion="{{ $sesion }}" novalidate>
                     <label for="mensaje" hidden>Mensaje</label>
-                    <textarea id="mensaje" rows="1" placeholder="Escribe tu código estudiantil (ej. U00100001)…"></textarea>
+                    <textarea id="mensaje" rows="1" placeholder="Escribe tu código (ej. U00100001)"></textarea>
                     <button class="primario" id="enviar">Enviar</button>
                 </form>
                 <p class="nota">Las respuestas se generan con IA a partir de datos de demostración; verifica la información importante con tu programa.</p>

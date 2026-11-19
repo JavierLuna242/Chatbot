@@ -81,6 +81,7 @@ async function enviar(texto) {
     boton.disabled = true;
     if (texto.trim()) agregar('yo', formato(texto.trim()));
     codigo = texto.match(/\bU\d{8}\b/i)?.[0].toUpperCase() ?? codigo;   // un código nuevo reemplaza al anterior
+    if (codigo) campo.placeholder = 'Escribe tu pregunta…';   // ya no hace falta pedir el código
     const espera = agregar('bot', '<span class="puntos" aria-label="Escribiendo"><i></i><i></i><i></i></span><span class="estado"></span>');
     const temporizadores = estadosEspera.map(([ms, t]) => setTimeout(() => { const e = espera.querySelector('.estado'); if (e) e.textContent = t; }, ms));
     try {
