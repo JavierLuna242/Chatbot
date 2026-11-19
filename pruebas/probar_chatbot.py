@@ -18,7 +18,7 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 ENV = dict(l.rstrip("\r\n").split("=", 1) for l in (RAIZ / ".env").read_text(encoding="utf8").splitlines() if re.match(r"^[A-Z][A-Z0-9_]*=", l))
 URL, AUTH = ENV["N8N_CHAT_URL"], base64.b64encode(f"{ENV['N8N_CHAT_USER']}:{ENV['N8N_CHAT_PASSWORD']}".encode()).decode()
-COD = "U00100005"   # Andrés Pérez Castro: 61 de 134 créditos, 73 pendientes, 45.5 %; CD01 y CD03 reprobados, CD02 3.3 y CD04 4.3
+COD = "U00100005"   # Andrés Pérez Castro: 65 de 134 créditos, 69 pendientes, 48.5 %; CD01 y CD03 reprobados, CD02 3.3 y CD04 4.3
 BLOQUEO = ["no puedo procesar", "reformula"]
 FUERA = ["unicamente con temas academicos"]
 
@@ -32,18 +32,22 @@ CASOS = [
     ("identificacion sin codigo", None, "Hola", [["codigo estudiantil"]], [], {"saludo": True}),
     ("identificacion con codigo", COD, COD, [["andres"]], [], {"saludo": True}),
     ("codigo inexistente", "U99999999", "Mi código es U99999999", [["no existe", "no encontr", "no aparece", "revis", "verific"]], ["andres"], {"saludo": True}),
-    ("personal sin codigo", None, "¿Cuánto me falta para graduarme?", [["codigo"]], ["61 de", "73 credito"], {}),
-    ("avance creditos", COD, "¿Cuánto me falta para graduarme?", [["73"]], [], {}),
+    ("personal sin codigo", None, "¿Cuánto me falta para graduarme?", [["codigo"]], ["65 de", "69 credito"], {}),
+    ("avance creditos", COD, "¿Cuánto me falta para graduarme?", [["69"]], [], {}),
     ("avance porcentaje", COD, "¿Qué porcentaje de la carrera llevo?", [["45"]], [], {}),
     ("materias recomendadas", COD, "¿Qué materias debería cursar el próximo semestre?", [["credito"]], [], {}),
     ("competencias digitales", COD, "¿Qué cursos de competencias digitales he tomado?", [["3.3", "3,3"], ["4.3", "4,3"], ["reprobad", "repetir"]],
      ["fundamentos de computacion", "programacion basica", "ciberseguridad"], {}),
-    # notas sintéticas: U00100005 tiene promedio 3.74 (puede inscribir 18 créditos); U00100018, el mejor, 4.68 (hasta 21)
-    ("promedio", COD, "¿Cuál es mi promedio acumulado?", [["3.74", "3,74"]], [], {}),
+    # notas sintéticas: U00100005 tiene promedio 3.73 (puede inscribir 18 créditos); U00100018, el mejor, 4.68 (hasta 21)
+    ("promedio", COD, "¿Cuál es mi promedio acumulado?", [["3.73", "3,73"]], [], {}),
     ("estado academico", COD, "¿Estoy en prueba académica?", [["no estas en prueba", "buen estado", "no te encuentras", "no estas"]], [], {}),
     ("carga maxima", COD, "¿Cuántos créditos puedo inscribir como máximo el próximo semestre?", [["18"]], ["21"], {}),
     ("carga maxima promedio alto", "U00100018", "¿Cuántos créditos puedo inscribir como máximo el próximo semestre?", [["21"]], [], {}),
     ("nota de una materia", COD, "¿Qué nota saqué en Álgebra Lineal?", [["4.1", "4,1"]], [], {}),
+    # prerrequisitos: a U00100005 le falta Ciencia de Datos e IA para Sistemas Inteligentes
+    ("prerrequisito bloqueada", COD, "¿Puedo inscribir Sistemas Inteligentes el próximo semestre?", [["ciencia de datos"]], [], {}),
+    # noticias filtradas por tema, con fuente y fecha
+    ("noticias por tema", COD, "¿Qué noticias de tecnología hay?", [["unab.edu.co"], ["2026"]], [], {}),
     ("noticias", COD, "¿Qué noticias hay de la universidad?", [["noticia", "novedad", "recient"]], [], {}),
     ("calendario inscripcion", COD, "¿Cuándo es la inscripción de materias del próximo semestre?", [["diciembre"]], [], {}),
     ("calendario inicio clases", COD, "¿Cuándo empiezan las clases de 2027-1?", [["25"], ["enero"]], [], {}),

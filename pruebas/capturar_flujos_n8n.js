@@ -1,4 +1,4 @@
-// Dibuja los 3 flujos de n8n del proyecto con el componente oficial n8n-demo y guarda su imagen en docs/capturas/n8n-*.png.
+// Dibuja los flujos de n8n del proyecto con el componente oficial n8n-demo y guarda su imagen en docs/capturas/n8n-*.png.
 // Uso, desde la carpeta pruebas/:   npm install   y luego   node capturar_flujos_n8n.js
 //   NAVEGADOR=<ruta>  ejecutable de Edge o Chrome (por defecto, el de Edge en Windows)
 //
@@ -18,6 +18,7 @@ const VISTAS = [   // archivo, imagen, ancho y alto de la vista
     ['chatbot_academico.json', 'n8n-01-chatbot.png', 1600, 900],
     ['ingesta_documentos.json', 'n8n-02-ingesta.png', 1400, 620],
     ['noticias_unab.json', 'n8n-03-noticias.png', 1400, 420],
+    ['evaluacion_rag.json', 'n8n-04-evaluacion-rag.png', 1400, 760],
 ];
 const PAGINA = `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#fff}n8n-demo{display:block}</style>
 <script type="module" src="https://cdn.jsdelivr.net/npm/@n8n_io/n8n-demo-component@1.0.20/n8n-demo.bundled.js"></script></head>
