@@ -31,4 +31,12 @@ En octavo semestre el estudiante cursa la Práctica Profesional, de 12 créditos
 Además de los 134 créditos del plan, el estudiante debe obtener la insignia de competencias digitales, con cuatro cursos de un crédito (CD01 a CD04). Ver el documento específico de la insignia.
 
 ## Prerrequisitos
-El plan cargado en el sistema no incluye prerrequisitos. Se recomienda cursar las materias de cada semestre en orden y confirmar los requisitos con la dirección del programa antes de inscribir materias de semestres avanzados.
+Cada materia solo se puede inscribir si ya se aprobaron sus prerrequisitos, que siempre son materias de semestres anteriores. El asistente puede decir qué materias tiene habilitadas cada estudiante y cuáles tiene bloqueadas y por qué. Las cadenas principales son:
+
+- **Programación:** Razonamiento algorítmico → Programación orientada a objetos y Análisis de algoritmos → Estructura de datos → Arquitectura de software → Ingeniería de software → Calidad de software y Soluciones innovadoras.
+- **Datos:** Estructura de datos → Diseño de bases de datos → Gestión de bases de datos → Ciencia de datos e inteligencia artificial → Sistemas inteligentes.
+- **Desarrollo web e infraestructura:** Programación orientada a objetos → Desarrollo frontend → Desarrollo backend → Infraestructura tecnológica → Ciberseguridad y Servicios cloud e IoT. Desarrollo backend también abre Desarrollo de aplicaciones móviles.
+- **Matemáticas y física:** Cálculo diferencial → Cálculo integral → Cálculo en varias variables → Ecuaciones diferenciales → Dinámica de sistemas; Cálculo diferencial → Mecánica → Electromagnetismo.
+- **Estadística:** Álgebra lineal → Matemáticas computacionales → Estadística descriptiva → Estadística inferencial y muestreo, Ingeniería basada en evidencia y Ciencia de datos e inteligencia artificial.
+
+La cadena más larga tiene 7 materias, una por semestre: perder una materia de esa cadena puede alargar la carrera aunque sobren créditos por semestre. Los prerrequisitos de este documento son de demostración; los oficiales los confirma la dirección del programa.

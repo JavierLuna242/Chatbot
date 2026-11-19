@@ -9,7 +9,7 @@
 CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA extensions;
 
 DROP VIEW  IF EXISTS v_cd_estado, v_pendientes, v_avance, v_aprobados CASCADE;
-DROP TABLE IF EXISTS cd_cursado, curso_cd, materia_aprobada, estudiante, curso, carrera, calendario CASCADE;
+DROP TABLE IF EXISTS prerrequisito, cd_cursado, curso_cd, materia_aprobada, estudiante, curso, carrera, calendario CASCADE;
 
 CREATE TABLE carrera (
   nombre           text PRIMARY KEY,
@@ -27,6 +27,15 @@ CREATE TABLE curso (
   tipo     text NOT NULL            -- obligatorio | electivo
 );
 CREATE INDEX ON curso (carrera, semestre);
+
+-- Prerrequisitos entre materias del plan (prerrequisitos.csv -> plan_estudios.sql). De demostración: coherentes con el plan,
+-- pero no son los oficiales. Siempre apuntan a una materia de un semestre anterior.
+CREATE TABLE prerrequisito (
+  curso    int REFERENCES curso ON DELETE CASCADE,   -- la materia
+  requiere int REFERENCES curso ON DELETE CASCADE,   -- la que hay que tener aprobada antes
+  PRIMARY KEY (curso, requiere),
+  CHECK (curso <> requiere)
+);
 
 -- Estudiantes sintéticos (estudiantes_sinteticos.sql). El código es lo único que el estudiante escribe en el chat.
 CREATE TABLE estudiante (
@@ -75,12 +84,29 @@ CREATE TABLE calendario (
   categoria    text NOT NULL
 );
 
+-- Tema de una noticia según palabras clave de su TÍTULO (sin tildes ni mayúsculas): el resumen trae texto genérico que confunde
+-- (por ejemplo, las convocatorias laborales repiten «institución de educación superior»). La usa el flujo "Noticias UNAB" al guardar.
+-- Orden de prioridad: ingeniería de sistemas > tecnología > educación > otros.
+CREATE OR REPLACE FUNCTION clasificar_tema(texto text) RETURNS text
+LANGUAGE sql IMMUTABLE SET search_path = pg_catalog AS $$
+  SELECT CASE
+    WHEN t ~ '(ingenieria de sistemas|software|programacion|ciberseguridad|ciencia de datos|bases? de datos|algoritm|data intelligence|desarrollo web)'
+      THEN 'ingeniería de sistemas'
+    WHEN t ~ '(inteligencia artificial|\mia\M|tecnolog|digital|moodle|biometric|face id|plataforma|innovacion|robot)'
+      THEN 'tecnología'
+    WHEN t ~ '(\mcursos?\M|estudiante|pregrado|posgrado|maestria|aprendizaje|academic|docente|profesor|matricula|beca|formacion|investigacion|ciencia|gradu|semestre)'
+      THEN 'educación'
+    ELSE 'otros' END
+  FROM (SELECT translate(lower(coalesce(texto, '')), 'áéíóúüñ', 'aeiouun') AS t) x
+$$;
+
 -- Llenada por el workflow de n8n "Noticias UNAB" (scraping periódico)
 CREATE TABLE IF NOT EXISTS noticia (
   url     text PRIMARY KEY,
   titulo  text NOT NULL,
   resumen text,
-  fecha   timestamptz
+  fecha   timestamptz,
+  tema    text                      -- clasificar_tema(titulo)
 );
 
 -- Memoria del chat (nodo "Postgres Chat Memory" de n8n) y vectores del RAG (nodo PGVector, embeddings de Gemini).
@@ -120,9 +146,15 @@ JOIN carrera k ON k.nombre = e.carrera
 LEFT JOIN v_aprobados a ON a.codigo_estudiante = e.codigo
 GROUP BY e.codigo, k.nombre;
 
--- Materias del plan sin aprobar. El plan oficial no trae prerrequisitos: se ordenan por semestre.
+-- Materias del plan sin aprobar, ordenadas por semestre. «falta» = prerrequisitos que el estudiante aún no aprobó
+-- (vacío = la puede inscribir ya).
 CREATE VIEW v_pendientes WITH (security_invoker = true) AS
-SELECT e.codigo AS codigo_estudiante, c.id AS curso, c.nombre, c.creditos, c.semestre, c.tipo
+SELECT e.codigo AS codigo_estudiante, c.id AS curso, c.nombre, c.creditos, c.semestre, c.tipo,
+       coalesce((SELECT array_agg(r.nombre ORDER BY r.semestre, r.id)
+                 FROM prerrequisito p JOIN curso r ON r.id = p.requiere
+                 WHERE p.curso = c.id
+                   AND NOT EXISTS (SELECT 1 FROM materia_aprobada a WHERE a.codigo_estudiante = e.codigo AND a.curso = p.requiere)),
+                '{}') AS falta
 FROM estudiante e
 JOIN curso c ON c.carrera = e.carrera
 WHERE NOT EXISTS (SELECT 1 FROM materia_aprobada a WHERE a.codigo_estudiante = e.codigo AND a.curso = c.id);
@@ -142,7 +174,7 @@ GROUP BY e.codigo, d.codigo, d.nombre, d.semestre;
 
 -- ---------------------------------------------------------------- Seguridad
 DO $$ DECLARE t text; BEGIN
-  FOREACH t IN ARRAY ARRAY['carrera','curso','estudiante','materia_aprobada','curso_cd','cd_cursado',
+  FOREACH t IN ARRAY ARRAY['carrera','curso','prerrequisito','estudiante','materia_aprobada','curso_cd','cd_cursado',
                            'calendario','noticia','n8n_chat_histories','n8n_vectors'] LOOP
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);   -- sin políticas: la API REST (anon/authenticated) no ve nada
   END LOOP;

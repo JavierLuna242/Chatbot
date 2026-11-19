@@ -1,4 +1,4 @@
-"""Convierte base-de-datos/planes_pregrados.csv en base-de-datos/plan_estudios.sql (carreras + materias).
+"""Convierte base-de-datos/planes_pregrados.csv y prerrequisitos.csv en base-de-datos/plan_estudios.sql (carreras, materias y prerrequisitos).
 
 Uso: python base-de-datos/generar_plan_estudios.py
 El id de cada materia es su posición en el CSV: los estudiantes guardan esos ids como "aprobadas",
@@ -44,5 +44,15 @@ salida = ["-- GENERADO por base-de-datos/generar_plan_estudios.py desde planes_p
 salida.append(",\n".join(f"({sql(c)},{s},{cr})" for c, (s, cr) in sorted(carreras.items())) + ";")
 salida.append("INSERT INTO curso (id, carrera, semestre, nombre, creditos, tipo) VALUES")
 salida.append(",\n".join(f"({i},{sql(c)},{s},{sql(n)},{cr},{sql(t)})" for i, c, s, n, cr, t in materias) + ";")
+
+# prerrequisitos (prerrequisitos.csv: materia,requiere por nombre); cada uno debe estar en un semestre anterior
+ids = {m[3]: (m[0], m[2]) for m in materias}   # nombre -> (id, semestre)
+pares = [(ids[f["materia"]], ids[f["requiere"]]) for f in csv.DictReader(open(AQUI / "prerrequisitos.csv", encoding="utf-8"))]
+malos = [(m, r) for m, r in pares if r[1] >= m[1]]
+if malos:
+    raise SystemExit(f"Prerrequisitos que no están en un semestre anterior: {malos}")
+salida.append("INSERT INTO prerrequisito (curso, requiere) VALUES")
+salida.append(",\n".join(f"({m[0]},{r[0]})" for m, r in pares) + ";")
+
 (AQUI / "plan_estudios.sql").write_text("\n".join(salida) + "\n", encoding="utf-8")
-print(f"{len(carreras)} carreras, {len(materias)} materias -> plan_estudios.sql")
+print(f"{len(carreras)} carreras, {len(materias)} materias, {len(pares)} prerrequisitos -> plan_estudios.sql")

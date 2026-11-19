@@ -28,6 +28,20 @@ async def main():
 
         r = (await call("cursos_recomendados", codigo="U00100005")).data
         assert 0 < r["creditos"] <= 17 and r["sugeridos"], r
+        # prerrequisitos: nada sugerido puede estar bloqueado, y cada bloqueada dice qué le falta
+        bloqueadas = {b["materia"] for b in r["bloqueadas_por_prerrequisito"]}
+        assert r["total_bloqueadas"] >= len(bloqueadas) > 0 and all(b["le_falta"] for b in r["bloqueadas_por_prerrequisito"]), r
+        assert not bloqueadas & {m["nombre"] for m in r["sugeridos"]}, r
+        assert a["cadena_de_prerrequisitos_pendiente"] >= 1 and a["semestres_restantes_estimados"] >= a["cadena_de_prerrequisitos_pendiente"], a
+        sem3 = {m["nombre"]: m["requiere"] for m in (await call("plan_de_estudios", semestre=3)).data}
+        assert set(sem3["ESTRUCTURA DE DATOS"]) == {"ANALISIS DE ALGORITMOS", "PROGRAMACION ORIENTADA A OBJETOS"}, sem3
+        nuevo2 = (await call("cursos_recomendados", codigo="U00100001")).data   # 1.er semestre: solo materias sin prerrequisito
+        assert all(m["semestre"] == 1 for m in nuevo2["sugeridos"]), nuevo2
+
+        # noticias: filtro por tema, con fuente y fecha
+        tec = (await call("noticias_recientes", tema="tecnología", limite=5)).data
+        assert tec and all(n["tema"] == "tecnología" and n["fuente"].startswith("https://") and n["fecha"] for n in tec), tec
+        assert (await c.call_tool("noticias_recientes", {"tema": "deportes"}, raise_on_error=False)).is_error
 
         cd = (await call("competencias_digitales", codigo="U00100004")).data  # 4.º: CD01-CD03 hechos (o por repetir) y CD04 en curso: aún sin insignia
         assert [x["curso_cd"] for x in cd["cursos"]] == ["CD01", "CD02", "CD03", "CD04"] and not cd["insignia_obtenida"], cd
@@ -43,7 +57,7 @@ async def main():
         assert pr["estado"] == "buen estado académico" and pr["puede_inscribir_hasta_creditos"] in (18, 21), pr
         assert (pr["puede_inscribir_hasta_creditos"] == 21) == (pr["promedio_acumulado"] >= 4.0), pr   # coherente con el reglamento
         det = (await call("promedio_y_estado", codigo="U00100005", con_detalle=True)).data["notas_por_materia"]
-        assert len(det) == 24 and all(3.0 <= x["nota"] <= 5.0 for x in det) and det[0]["semestre"] == 1, det     # 22 con créditos + 2 laboratorios
+        assert len(det) == 25 and all(3.0 <= x["nota"] <= 5.0 for x in det) and det[0]["semestre"] == 1, det     # 23 con créditos + 2 laboratorios
         assert "notas_por_materia" not in pr                                                                       # sin pedirlo no se envían (gasta tokens)
         assert (await call("promedio_y_estado", codigo="U00100001")).data["promedio_acumulado"] is None   # 1.er semestre: sin notas
         pos = [int((await call("promedio_y_estado", codigo=f"U{100000 + n:08d}")).data.get("puesto_en_el_programa", "0 de 0").split()[0]) for n in range(2, 31)]

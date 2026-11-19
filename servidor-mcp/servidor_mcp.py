@@ -73,33 +73,57 @@ def consultar_estudiante(codigo: str) -> dict:
         "aviso": "Datos de demostración (base sintética), no del sistema académico oficial."}
 
 
+def cadena_pendiente(codigo: str) -> int:
+    """Largo de la cadena de prerrequisitos más larga entre las materias pendientes: cada eslabón necesita un semestre aparte."""
+    pendientes = {f["curso"] for f in q("SELECT curso FROM v_pendientes WHERE codigo_estudiante = %s", codigo)}
+    requiere = {}
+    for f in q("SELECT curso, requiere FROM prerrequisito"):
+        requiere.setdefault(f["curso"], []).append(f["requiere"])
+    nivel = {}
+
+    def largo(c):   # el grafo va siempre hacia semestres anteriores: no tiene ciclos
+        if c not in nivel:
+            nivel[c] = 1 + max((largo(r) for r in requiere.get(c, ()) if r in pendientes), default=0)
+        return nivel[c]
+    return max((largo(c) for c in pendientes), default=0)
+
+
 @mcp.tool
 def avance_y_proyeccion(codigo: str, creditos_por_semestre: int | None = None) -> dict:
-    """Créditos aprobados y pendientes, porcentaje de avance y semestres restantes estimados (por defecto con la carga típica de la carrera)."""
+    """Créditos aprobados y pendientes, porcentaje de avance y semestres restantes estimados según la carga (por defecto la típica) y la cadena de prerrequisitos."""
     codigo = validar(codigo)
     av = avance(codigo)
     por_semestre = entre(av["creditos_por_semestre_plan"] if creditos_por_semestre is None else creditos_por_semestre, 1, 40, "creditos_por_semestre")
     av["creditos_por_semestre_supuestos"] = por_semestre
-    # Limitación: proyección solo por créditos; el plan oficial no trae prerrequisitos para calcular la cadena más larga
-    av["semestres_restantes_estimados"] = math.ceil(av["creditos_pendientes"] / por_semestre)
+    por_creditos = math.ceil(av["creditos_pendientes"] / por_semestre)
+    cadena = cadena_pendiente(codigo)
+    # la proyección es el mayor de los dos límites: créditos por semestre y cadena de prerrequisitos
+    av["semestres_restantes_estimados"] = max(por_creditos, cadena)
+    av["cadena_de_prerrequisitos_pendiente"] = cadena
+    av["limita"] = "los prerrequisitos" if cadena > por_creditos else "la carga de créditos"
     av["aviso"] = "Datos de demostración (base sintética)."
     return av
 
 
 @mcp.tool
 def cursos_recomendados(codigo: str, max_creditos: int | None = None) -> dict:
-    """Materias pendientes sugeridas para el próximo periodo (semestres bajos primero, sin pasar de max_creditos; por defecto la carga típica). El plan no trae prerrequisitos: que el estudiante los confirme."""
+    """Materias que el estudiante ya puede inscribir el próximo periodo (prerrequisitos cumplidos; semestres bajos primero, sin pasar de max_creditos; por defecto la carga típica) y las bloqueadas con lo que les falta."""
     codigo = validar(codigo)
     max_creditos = entre(avance(codigo)["creditos_por_semestre_plan"] if max_creditos is None else max_creditos, 1, 40, "max_creditos")
-    candidatos = q("""SELECT nombre, creditos, semestre, tipo FROM v_pendientes
+    pendientes = q("""SELECT nombre, creditos, semestre, tipo, falta FROM v_pendientes
                       WHERE codigo_estudiante = %s ORDER BY semestre, curso""", codigo)
+    habilitadas = [p for p in pendientes if not p["falta"]]
+    bloqueadas = [p for p in pendientes if p["falta"]]
     elegidos, total = [], 0
-    for c in candidatos:
+    for c in habilitadas:
         if total + c["creditos"] <= max_creditos:
-            elegidos.append(c)
+            elegidos.append({k: c[k] for k in ("nombre", "creditos", "semestre", "tipo")})
             total += c["creditos"]
-    return {"sugeridos": elegidos, "creditos": total, "otras_pendientes": len(candidatos) - len(elegidos),
-            "aviso": "Sin prerrequisitos en el plan: confirmar con el programa antes de inscribir."}
+    return {"sugeridos": elegidos, "creditos": total, "otras_habilitadas": len(habilitadas) - len(elegidos),
+            # las bloqueadas del semestre más cercano bastan para explicar el orden (todas gastarían tokens sin aportar)
+            "bloqueadas_por_prerrequisito": [{"materia": b["nombre"], "semestre": b["semestre"], "le_falta": b["falta"]} for b in bloqueadas[:4]],
+            "total_bloqueadas": len(bloqueadas),
+            "aviso": "Prerrequisitos de demostración, coherentes con el plan: confirmar con el programa antes de inscribir."}
 
 
 @mcp.tool
@@ -115,11 +139,13 @@ def competencias_digitales(codigo: str) -> dict:
 
 @mcp.tool
 def plan_de_estudios(semestre: int | None = None) -> list[dict]:
-    """Materias y créditos del plan, opcionalmente de un semestre (1 a 8). Información pública."""
+    """Materias, créditos y prerrequisitos del plan, opcionalmente de un semestre (1 a 8). Información pública."""
     if semestre is not None:
         entre(semestre, 1, 8, "semestre")
-    return q("""SELECT semestre, nombre, creditos, tipo FROM curso
-                WHERE carrera = %s AND (%s::int IS NULL OR semestre = %s) ORDER BY semestre, id""",
+    return q("""SELECT c.semestre, c.nombre, c.creditos, c.tipo,
+                       coalesce((SELECT array_agg(r.nombre ORDER BY r.semestre, r.id) FROM prerrequisito p
+                                 JOIN curso r ON r.id = p.requiere WHERE p.curso = c.id), '{}') AS requiere
+                FROM curso c WHERE c.carrera = %s AND (%s::int IS NULL OR c.semestre = %s) ORDER BY c.semestre, c.id""",
              CARRERA, semestre, semestre)
 
 
@@ -140,12 +166,18 @@ def calendario_academico(buscar: str | None = None) -> list[dict]:
     return filas
 
 
+TEMAS = ("ingeniería de sistemas", "tecnología", "educación", "otros")
+
+
 @mcp.tool
-def noticias_recientes(limite: int = 4) -> list[dict]:
-    """Últimas noticias y convocatorias de la universidad."""
+def noticias_recientes(tema: str | None = None, limite: int = 4) -> list[dict]:
+    """Últimas noticias de la universidad con su fecha y fuente (enlace). 'tema' filtra: ingeniería de sistemas, tecnología, educación u otros."""
+    if tema is not None and tema not in TEMAS:
+        raise ValueError(f"tema debe ser uno de: {', '.join(TEMAS)}.")
     # resumen recortado: la salida entra completa al contexto del modelo y gasta tokens (Groq gratis: 8000 por minuto)
-    return q("SELECT titulo, url, left(resumen, 180) AS resumen, fecha::text FROM noticia ORDER BY fecha DESC LIMIT %s",
-             min(max(limite, 1), 10))
+    return q("""SELECT titulo, fecha::date::text AS fecha, url AS fuente, tema, left(resumen, 180) AS resumen FROM noticia
+                WHERE %s::text IS NULL OR tema = %s ORDER BY fecha DESC LIMIT %s""",
+             tema, tema, min(max(limite, 1), 10))
 
 
 PRUEBA_ACADEMICA = Decimal("3.0")      # reglamento: promedio acumulado inferior a 3.0 = prueba académica

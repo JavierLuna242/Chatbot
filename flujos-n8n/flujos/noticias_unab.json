@@ -62,7 +62,7 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO noticia (url, titulo, resumen, fecha) VALUES ($1, $2, $3, $4) ON CONFLICT (url) DO UPDATE SET titulo = EXCLUDED.titulo, resumen = EXCLUDED.resumen",
+        "query": "INSERT INTO noticia (url, titulo, resumen, fecha, tema) VALUES ($1, $2, $3, $4, clasificar_tema($2)) ON CONFLICT (url) DO UPDATE SET titulo = EXCLUDED.titulo, resumen = EXCLUDED.resumen, tema = EXCLUDED.tema",
         "options": {
           "queryReplacement": "={{ [$json.link, $json.title.rendered.replace(/<[^>]+>/g, ''), $json.excerpt.rendered.replace(/<[^>]+>/g, '').trim(), $json.date + '-05:00'] }}"
         }

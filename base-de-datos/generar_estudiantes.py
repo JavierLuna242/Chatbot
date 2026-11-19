@@ -4,6 +4,9 @@ Uso: python base-de-datos/generar_estudiantes.py   (después de generar_plan_est
 Semilla fija: siempre salen los mismos estudiantes. Códigos U00100001 a U00100030 (el 1.º está en 1.er semestre y así hasta el 8.º).
 Cada estudiante aprobó las materias de los semestres anteriores al actual, salvo 0-2 materias perdidas;
 los cursos CD (insignia de competencias digitales) siguen el mismo patrón, con algún reprobado.
+Coherencia con los prerrequisitos (prerrequisitos.csv): una materia «perdida» de la que depende otra que el estudiante sí aprobó se
+considera repetida y aprobada (si no, habría aprobado una materia sin su prerrequisito). Su nota sale de otro generador (rng_repetidas)
+para no mover las demás notas.
 Cada materia aprobada trae una nota entre 3.0 y 5.0 (solo se guardan las aprobadas). Las notas salen de un generador aparte (rng_notas)
 para que agregarlas no cambie nada de lo demás: cada estudiante tiene un nivel propio (3.3 a 4.6) y sus notas varían alrededor de él.
 """
@@ -21,9 +24,15 @@ CD = ["CD01", "CD02", "CD03", "CD04"]  # el CDn se recomienda en el semestre n
 
 rng = random.Random(7)
 rng_notas = random.Random(11)
+rng_repetidas = random.Random(13)
 cursos = []  # (id, semestre, creditos)
+por_nombre = {}
 for i, f in enumerate(csv.DictReader(open(AQUI / "planes_pregrados.csv", encoding="utf-8-sig")), start=1):
     cursos.append((i, ORDINALES.index(f["semestre"].split()[0].lower()) + 1, int(f["creditos_materia"])))
+    por_nombre[f["materia"].strip()] = i
+requiere = {}   # id de la materia -> ids de sus prerrequisitos
+for f in csv.DictReader(open(AQUI / "prerrequisitos.csv", encoding="utf-8")):
+    requiere.setdefault(por_nombre[f["materia"]], set()).add(por_nombre[f["requiere"]])
 
 
 def periodo(atras):
@@ -47,8 +56,20 @@ for n in range(1, 31):
 
     previas = [c for c in cursos if c[1] < actual]
     perdidas = {c[0] for c in rng.sample([c for c in previas if c[2] > 0], min(rng.choice([0, 0, 1, 2]), len(previas)))}
+    # una perdida que es prerrequisito de algo aprobado se repitió y se aprobó (hasta que no quede ninguna así)
+    repetidas = set()
+    while True:
+        aprob = {c[0] for c in previas} - (perdidas - repetidas)
+        nuevas = {r for m in aprob for r in requiere.get(m, ()) if r not in aprob}
+        if not nuevas:
+            break
+        repetidas |= nuevas
     nivel = rng_notas.uniform(3.3, 4.6)
-    aprobadas += [f"({sql(codigo)},{c[0]},{min(5.0, max(3.0, round(rng_notas.gauss(nivel, 0.35), 1)))})" for c in previas if c[0] not in perdidas]
+    for c in previas:
+        if c[0] not in perdidas:
+            aprobadas.append(f"({sql(codigo)},{c[0]},{min(5.0, max(3.0, round(rng_notas.gauss(nivel, 0.35), 1)))})")
+        elif c[0] in repetidas:
+            aprobadas.append(f"({sql(codigo)},{c[0]},{min(5.0, max(3.0, round(rng_repetidas.gauss(nivel, 0.35), 1)))})")
 
     for k, cd in enumerate(CD, start=1):
         if k < actual:  # ya le tocaba: casi siempre aprobado, a veces reprobó el primer intento
